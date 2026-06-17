@@ -4,19 +4,25 @@ This document describes the WebSocket payloads and commands supported by `contro
 
 ## Setup
 
-1. Install dependency:
+1. Install dependencies:
 
 ```bash
-pip install websocket-client
+pip install -r requirements.txt
 ```
 
-2. Run the websocket bridge:
+2. Create a `.env` file in the project root or copy `.env.example` and update the values. The script loads `.env` automatically.
 
 ```bash
-python control_websocket.py --ws-url ws://localhost:8765
+cp .env.example .env
 ```
 
-3. If needed, set camera connection variables:
+3. Run the websocket bridge:
+
+```bash
+python control_websocket.py
+```
+
+4. If needed, set camera connection variables using environment variables, or override them on the command line:
 
 ```bash
 export SIYI_IP=192.168.144.25

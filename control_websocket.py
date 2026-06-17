@@ -6,6 +6,8 @@ import os
 import sys
 import time
 
+from dotenv import load_dotenv
+
 try:
     import websocket
 except ImportError:
@@ -17,9 +19,16 @@ from siyi_sdk import SIYISDK
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-DEFAULT_WS_URL = os.getenv("SIYI_WS_URL", "ws://localhost:8765")
-DEFAULT_CAM_IP = os.getenv("SIYI_IP", "192.168.144.25")
-DEFAULT_CAM_PORT = int(os.getenv("SIYI_PORT", "37260"))
+def get_default_ws_url():
+    return os.getenv("SIYI_WS_URL", "ws://localhost:8765")
+
+
+def get_default_cam_ip():
+    return os.getenv("SIYI_IP", "192.168.144.25")
+
+
+def get_default_cam_port():
+    return int(os.getenv("SIYI_PORT", "37260"))
 
 
 def send_ws_response(ws, request, status, info=None, data=None):
@@ -157,17 +166,26 @@ def on_close(ws, close_status_code, close_msg):
     logger.info("WebSocket connection closed: %s %s", close_status_code, close_msg)
 
 
-def build_parser():
+def build_parser(default_ws_url, default_ip, default_port):
     parser = argparse.ArgumentParser(description="Control SIYI camera via websocket commands.")
-    parser.add_argument("--ws-url", default=DEFAULT_WS_URL, help="WebSocket server URL")
-    parser.add_argument("--ip", default=DEFAULT_CAM_IP, help="SIYI camera IP")
-    parser.add_argument("--port", default=DEFAULT_CAM_PORT, type=int, help="SIYI camera port")
+    parser.add_argument("--env-file", default=".env", help="Path to .env file")
+    parser.add_argument("--ws-url", default=default_ws_url, help="WebSocket server URL")
+    parser.add_argument("--ip", default=default_ip, help="SIYI camera IP")
+    parser.add_argument("--port", default=default_port, type=int, help="SIYI camera port")
     return parser
 
 
 def main():
-    parser = build_parser()
-    args = parser.parse_args()
+    env_parser = argparse.ArgumentParser(add_help=False)
+    env_parser.add_argument("--env-file", default=".env", help="Path to .env file")
+    env_args, remaining_args = env_parser.parse_known_args()
+
+    if env_args.env_file:
+        load_dotenv(dotenv_path=env_args.env_file, override=False)
+
+    parser = build_parser(get_default_ws_url(), get_default_cam_ip(), get_default_cam_port())
+    parser.set_defaults(env_file=env_args.env_file)
+    args = parser.parse_args(remaining_args)
 
     cam = SIYISDK(server_ip=args.ip, port=args.port)
     if not cam.connect():
